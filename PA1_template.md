@@ -1,16 +1,33 @@
 # Reproducible Research: Peer Assessment 1
-#### Author: Andria Hall
+##### Author: Andria Hall
 
-#### Introduction:
+##### Date: "March 15, 2015"
 
-This report is a Reproducible Research in a **single R Markdown** document that was processed by **knitr** and transformed into a **HTML** file. It was created from a dataset that consists of **17568** observations and **3** variables. This dataset was generated from a personal activity monitoring device that collects data at 5-minute intervals throughout the day by an anonymous individual during the month of **October** and **November 2012**.
+## Introduction
 
-## Prepare the working evironment
+This report is a **Reproducible Research** and is a **single R markdown** document that is processed by `knitr` and transformed into a `HTML` file. The dataset is stored in a comma-separated-value (CSV) file and there are a total of **17,568** observations in this dataset. 
 
-Since report requires writing code chunks in the R markdown document, I have set **echo = TRUE** and set **results = hold** as global options so that the reader can read the code.
+The variables included in this dataset are:
+
+* **steps:** Number of steps taking in a 5-minute interval (missing values are
+coded as NA)
+
+* **date:** The date on which the measurement was taken in YYYY-MM-DD
+format.
+
+* **interval:** Identifier for the 5-minute interval in which measurement was
+taken.
+
+The dataset is generated from a personal activity monitoring device that collects data at a 5-minute interval, throughout the day, as stated above, and by an anonymous individual during the months of **October** and **November 2012**.
+
+
+## Prepare the working environment
+
+Since the report requires writing code chunks in the **R markdown** document, so that my peer evaluators will be able to review the code for their analysis; I have set `echo = TRUE` and  `results = hold` as global options.
 
 
 ```r
+# load the knitr library
 library(knitr)
 opts_chunk$set(echo = TRUE, results = 'hold')
 ```
@@ -19,7 +36,7 @@ opts_chunk$set(echo = TRUE, results = 'hold')
 
 
 ```r
-# load packages
+# load required packages
 suppressMessages(require("data.table"))
 suppressMessages(require("dplyr"))
 suppressMessages(require("tidyr"))
@@ -28,12 +45,12 @@ suppressMessages(require("ggplot2"))
 
 ## Loading and preprocessing the data
 
-Here the activity dataset is loaded and processed for analysis
+Here the activity dataset is loaded and processed for analysis.
 
 
 ```r
 # load the activity data
-setwd("/Users/Andria/data/RepData_PeerAssessment1")
+setwd("/Users/Andria/RepData_PeerAssessment1")
 f <- file.path(getwd(), "activity.zip")
 activity <- tbl_df(read.csv(unz(f, "activity.csv"),header= TRUE, sep= ","))
 
@@ -55,10 +72,14 @@ head(select(activity, steps:interval))
 
 ## What is mean total number of steps taken per day?
 
-Here the missing values are ignored and the total number of steps computed
+Here the missing `NA` values are ignored and the **total** number of steps are summarised.
+
 
 ```r
+# calculate total steps taken
 steps_taken <- aggregate(steps ~ date, activity, sum, na.rm = TRUE)
+
+# shows the head of the steps_taken dataset
 head(steps_taken)
 ```
 
@@ -72,9 +93,11 @@ head(steps_taken)
 ## 6 2012-10-07 11015
 ```
 
-1. Now we can plot an histogram from **steps_taken** showing the total number of steps taken per day, using the appropriate bin interval.
+Now we can plot the histogram from `steps_taken` to show the **total** number of steps taken per day using the appropriate bin interval.
+
 
 ```r
+# plot of total steps taken
 g <- ggplot(steps_taken, aes(x=steps)) + 
         geom_histogram(fill=heat.colors(1), col="black", binwidth=1000) +
         labs(x = "Number of Steps per Day") + 
@@ -84,12 +107,13 @@ g <- ggplot(steps_taken, aes(x=steps)) +
 print(g)
 ```
 
-![](PA1_template_files/figure-html/plot_histogram-1.png) 
+![](PA1_template_files/figure-html/steps_taken_histogram-1.png) 
 
-1. Now we calculate the **mean** and **median** total number of steps taken per day
+Now we can calculate the **mean** and **median** total number of steps taken per day.
 
 
 ```r
+# calculate average mean and medium of steps taken
 steps_taken %>% summarise(steps_mean= mean(steps), steps_median = median(steps))
 ```
 
@@ -97,11 +121,13 @@ steps_taken %>% summarise(steps_mean= mean(steps), steps_median = median(steps))
 ##   steps_mean steps_median
 ## 1   10766.19        10765
 ```
+
 1. The **mean** number of steps is: **10766.19**
 2. The **median** number of steps is: **10765**
 
 ## What is the average daily activity pattern?
-1. We will now make a **time series plot** of the **average** number of steps taken across all days*(y-axis)*, of the 5-minute interval *(x-axis)*.
+
+We will now plot a **time series** of the **average** number of steps taken across all days *(y-axis)*, of the 5-minute interval *(x-axis)*.
 
 
 ```r
@@ -115,10 +141,10 @@ g <- ggplot(interval_steps, aes(x=interval, y=avg_steps)) +
 print(g)
 ```
 
-![](PA1_template_files/figure-html/average_steps-1.png) 
+![](PA1_template_files/figure-html/interval_steps_taken_time_series-1.png) 
 
-1. We will now calculate which 5-minute interval, on average across all the days in **interval_steps**, contains the maximum number of steps.
-
+We will now calculate which 5-minute interval, on average across all the days in **interval_steps** dataset, contains the **maximum** number of steps.
+ 
 
 ```r
 interval_steps[which.max(interval_steps$avg_steps),]
@@ -131,30 +157,33 @@ interval_steps[which.max(interval_steps$avg_steps),]
 ## 1      835  206.1698
 ```
 
-We can see from the report that the **835^th^** 5-minute interval, has the average maximum of **206** steps.
+We can see from the report that the **835^th^** 5-minute interval has an average maximum of **206** steps.
 
 ## Imputing missing values
 
-We will now calculate and report the total number of rows with **NAs**.from the 
-**activity** dataset created earlier.
+We will now calculate and report the total number of rows with `NA`, from the **activity** dataset created earlier.
 
 
 ```r
+# using is.na() to calculate missing values.
 sum(is.na(activity))
 ```
 
 ```
 ## [1] 2304
 ```
-1. The total number of rows with **NAs** is: **2304**
 
-Now we will create a new dataset called **fill_activity**, by filling in all of the missing **NA** values in the **activity** dataset of corresponding **interval** and the **mean** for 5-minute interval in the **interval_steps** dataset.
+The total number of rows with **NAs** is: **2304**
+
+Next we will create a new dataset called `fill_activity` by filling in all of the missing **NA** values in the `activity` dataset with the **mean** for 5-minute interval calculated in the `interval_steps` dataset.
 
 
 ```r
-fill_activity <- activity # make a copy of original dataset
-sapply(unique(activity$interval), # make interval distinct
-       function(x)
+# make a copy of original dataset
+fill_activity <- activity 
+# make interval distinct
+sapply(unique(activity$interval), 
+       function(x) # function(x) is called to replace 'NA' values with mean 'values'
                fill_activity[is.na(fill_activity) & (fill_activity$interval == x), 1] <<- interval_steps$avg_steps[interval_steps$interval == x])
 ```
 
@@ -219,24 +248,27 @@ sapply(unique(activity$interval), # make interval distinct
 ## [286]   0.6415094   0.2264151   1.0754717
 ```
 
-1. Even though the report shows no missing values are in dataset, let us reaffirm.
+Even though the report shows no missing values in the dataset let us reaffirm.
+
 
 ```r
+# using is.na() to calculate missing values.
 sum(is.na(fill_activity))
 ```
 
 ```
 ## [1] 0
 ```
-1. The total number of rows with **NAs** is: **0**
 
-We will now plot an histogram of the total number of steps taken each day from the filled-in **fill_activity** dataset.
+The total number of rows with `NA` is: **0**
+
+We will now plot an histogram of the total number of steps taken each day from the filled-in `fill_activity` dataset.
 
 
 ```r
 fill_steps_taken <- aggregate(steps ~ date, fill_activity, sum, na.rm = TRUE)
 
-# use the ggplot to make an hisgram of the total numbers of steps each day  
+# use the ggplot to make the hisgram of the total numbers of steps each day  
 g <- ggplot(fill_steps_taken, aes(x=steps)) + 
         geom_histogram(fill=heat.colors(1), col="black", binwidth=1000) +
         labs(x = "Number of Steps per Day") + 
@@ -246,9 +278,9 @@ g <- ggplot(fill_steps_taken, aes(x=steps)) +
 print(g)
 ```
 
-![](PA1_template_files/figure-html/filled-in-histogram-1.png) 
+![](PA1_template_files/figure-html/filled-in-steps_taken-histogram-1.png) 
 
-We will now calculate the and report the **mean** and **median** total number of steps taken per day computed in the dataset **fill_steps_taken**.
+We will now calculate and report the **mean** and **median** total number of steps taken per day in the dataset `fill_steps_taken`.
 
 
 ```r
@@ -259,10 +291,14 @@ fill_steps_taken %>% summarise(steps_mean= mean(steps), steps_median = median(st
 ##   steps_mean steps_median
 ## 1   10766.19     10766.19
 ```
+
 1. The **mean** number of steps is: **10766.19**
 2. The **median** number of steps is: **10766.19** 
 
-3. We can see that the **mean** **10766.19** is the same for calculated steps in the dataset with missing values and dataset without missing values, while the **median** is showing a slight difference of **1.19** in favor of the filled-in dataset, that is equivalent to the **10766.19** of its calculated **mean** value.
+We can see that the values of both the calculated *mean** and **median** of the filled-in dataset are equal to **10766.19**.
+
+We can also see that the **mean = 10766.19** is the same for calculated steps in the dataset with missing values and dataset with filled-in values, while the **median** is showing a slight difference of **1.19** in favor of the dataset with filled-in values. 
+
 
 
 ```r
@@ -280,13 +316,12 @@ fill_interval_steps[which.max(fill_interval_steps$fill_avg_steps),]
 ## 1      835       206.1698
 ```
 
-4. From the report the **835^th^** 5-minute interval, has the same average maximum of **206** steps for the filled-in dataset as for the missing dataset, therefore the impact of imputting missing data in the missing dataset remains the same for the maximim average numbers of steps. 
+Even though this calculation is not requested but is done to help confirm that if the **835^th^** 5-minute interval has the same average maximum of **206** steps for the filled-in dataset as for the missing dataset, then the impact of imputting missing data in the missing dataset remains the same for the maximum average numbers of steps. 
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
-1. We will create a new factor variable in the dataset with two levels - "weekday"
-and "weekend" indicating whether a given date is a weekday or weekend day.
+We will next create a new factor variable in the `fill_activity` dataset with two levels - "weekday" and "weekend" indicating whether a given date is a `weekday` or `weekend` day.
 
 
 ```r
@@ -295,7 +330,7 @@ fill_activity <- fill_activity %>%
         group_by(days)
 ```
 
-2. Then we will make a panel plot containing a time series plot of the 5-minute interval on the (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days on the (y-axis)
+Next we will make a panel plot containing a time series plot of the 5-minute interval on the (x-axis) and the average number of steps taken, averaged across all `weekday` days or `weekend` days on the (y-axis), from the a dataset called `week_days`.
 
 
 ```r
@@ -313,10 +348,10 @@ print(g)
 
 ![](PA1_template_files/figure-html/days_time_series_plot-1.png) 
 
-We observe from the graph above that more activities were done across all **weekends** than on **weekdays**, but the maximum number of activities on average are between **500** and **1000** intervals that were done on **weekdays**. This could be based on the fact that activities on **weekdays** between these intervals, mostly followed a consistent activity pattern.
+We observe from the graph above that more activities are done across all `weekends` than on `weekdays`. The maximum number of activities on average however, are between **500** and **1000** intervals and are done on `weekdays`. This could be that `steps` recorded on `weekdays` between these intervals are the result of a consistent activity pattern.
 
-The rest of the intervals shows on average, a higher but constant distribution of activity done on **weekends** than on **weekdays**, once again could be based on a consistent activity pattern, that gradually decreases as the activity period comes to an end.
+The rest of the intervals show on average, a higher but constant distribution of `activity` done on `weekends` than on `weekdays` and once again can be based on the result of a consistent activity pattern, that gradually decreases as the activity monitoring period comes to an end.
 
 ## Conclusion
 
-This report concludes by asking this vital question. What would have been the results of the activity patterns in all analysis, if the original dataset did not consist of **2304** missing values?
+This report concludes by asking; what would have been the results of the activity monitoring patterns in all required analysis, if the original dataset did not consist of **2304** missing values?
